@@ -1,0 +1,20 @@
+
+---
+
+## 🛠️ Requirements
+
+### Core Services
+- Python 3.10+
+- PostgreSQL
+- Redis
+
+### Python Dependencies
+Install core backend dependencies:
+
+```bash
+pip install -r requirements.txt
+
+
+For local ML development:
+
+pip install -r requirements-ml.txt
