@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual Environment
+venv/
+.env
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+*.sqlite3
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule.*
+*.pid
+
+# Node / React
+frontend/hrms-frontend/node_modules/
+frontend/hrms-frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db

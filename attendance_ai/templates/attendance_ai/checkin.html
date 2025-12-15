@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Registration & Attendance</title>
+    <style>
+        video, canvas {
+            width: 350px;
+            border-radius: 10px;
+            border: 2px solid #444;
+        }
+        #captureBtn, #registerBtn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Face Registration</h2>
+
+<label>Employee ID:</label>
+<input type="text" id="employee_id" placeholder="Enter Employee ID">
+
+<br><br>
+
+<video id="camera" autoplay></video>
+<br>
+<button id="captureBtn">Capture Photo</button>
+
+<canvas id="snapshot" style="display:none;"></canvas>
+
+<br>
+<button id="registerBtn" disabled>Register Face</button>
+
+<p id="response"></p>
+
+<script>
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("snapshot");
+    const captureBtn = document.getElementById("captureBtn");
+    const registerBtn = document.getElementById("registerBtn");
+    const responseBox = document.getElementById("response");
+    let capturedImageBlob = null;
+
+    // Start camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => { video.srcObject = stream });
+
+    // Capture image
+    captureBtn.onclick = () => {
+        canvas.style.display = "block";
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob(blob => {
+            capturedImageBlob = blob;
+            registerBtn.disabled = false;
+        }, "image/jpeg");
+    };
+
+    // Submit to backend
+    registerBtn.onclick = () => {
+        let employee_id = document.getElementById("employee_id").value;
+
+        if (!employee_id) {
+            alert("Enter employee ID");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("employee_id", employee_id);
+        formData.append("image", capturedImageBlob, "photo.jpg");
+
+        fetch("/api/face/register/", {
+            method: "POST",
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            responseBox.innerHTML = JSON.stringify(data, null, 2);
+        });
+    };
+</script>
+
+</body>
+</html>
