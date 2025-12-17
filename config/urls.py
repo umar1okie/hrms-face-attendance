@@ -12,7 +12,7 @@ urlpatterns = [
 
     # JWT auth endpoints (token obtain & refresh)
     path("api/auth/login/", CustomLoginView.as_view(), name="custom_token_obtain_pair"),
-    path("api/auth/register/", RegisterAPIView.as_view(), name="custom_register"),
+    # path("api/auth/register/", RegisterAPIView.as_view(), name="custom_register"),
     # path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 

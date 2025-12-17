@@ -31,6 +31,8 @@ from django.contrib.auth import authenticate
 from .models import RegisteredUser
 from .serializers import AttendanceCheckinSerializer
 from django.utils.timezone import now
+from rest_framework.permissions import IsAuthenticated
+from django.utils import timezone
 
 
 User = get_user_model()
@@ -403,8 +405,10 @@ def today_status(request):
 
     record = RemoteAttendance.objects.filter(
         user=request.user,
+        check_out_time__isnull=True,
         check_in_time__date=today
-    ).first()
+    ).order_by("-check_in_time").first()
+
 
     if record:
         return Response({
@@ -416,59 +420,49 @@ def today_status(request):
 
     return Response({"checked_in": False})
 
+
+
 class AttendanceCheckoutView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         user = request.user
 
-        # If user is not authenticated (AllowAny), get employee_id from frontend storage
-        employee_id = request.data.get("employee_id") or request.query_params.get("employee_id")
-        if not employee_id:
-            # Try loading from token user
-            if user and user.is_authenticated:
-                employee_id = user.employee_id
-            else:
-                # Try using latest attendance record without employee_id
-                latest = RemoteAttendance.objects.filter(check_out_time__isnull=True).order_by('-check_in_time').first()
-                if latest:
-                    latest.check_out_time = now()
-                    latest.save()
-                    return Response({
-                        "status": "success",
-                        "message": "Checkout successful",
-                        "check_out_time": latest.check_out_time,
-                        "employee_id": latest.user.employee_id
-                    })
-                return Response({"status": "error", "message": "No active check-in found"}, status=404)
-
-        today = now().date()
-
-        attendance = RemoteAttendance.objects.filter(
-            user__employee_id=employee_id,
-            check_in_time__date=today,
-            check_out_time__isnull=True
-        ).first()
+        attendance = (
+            RemoteAttendance.objects
+            .filter(user=user, check_out_time__isnull=True)
+            .order_by("-check_in_time")
+            .first()
+        )
 
         if not attendance:
-            return Response({"status": "error", "message": "No active check-in found today"}, status=404)
+            return Response(
+                {
+                    "status": "error",
+                    "message": "No active check-in found"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        attendance.check_out_time = now()
-        attendance.save()
+        attendance.check_out_time = timezone.now()
+        attendance.save(update_fields=["check_out_time"])
 
-        return Response({
-            "status": "success",
-            "message": "Checkout successful",
-            "check_out_time": attendance.check_out_time,
-            "employee_id": employee_id
-        }, status=200)
+        # Audit log
+        AuditLog.objects.create(
+            actor=user,
+            action="attendance_checkout",
+            target_repr=f"user:{user.id}",
+            extra={
+                "attendance_id": attendance.id
+            },
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
 
-
-
-
-
-
-
-
-
-
+        return Response(
+            {
+                "status": "success",
+                "message": "Checkout successful",
+                "check_out_time": attendance.check_out_time,
+            },
+            status=status.HTTP_200_OK
+        )

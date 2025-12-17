@@ -115,14 +115,8 @@ export const checkIn = async (formData) => {
 // ------------------------------
 // CHECKOUT
 // ------------------------------
-export const checkOut = async (employee_id) => {
-  const id = Array.isArray(employee_id) ? employee_id[0] : employee_id;
-
-  const resp = await api.post("attendance/checkout/", {
-    employee_id: String(id).trim(),
-  });
-
-  return resp.data;
+export const checkOut = async () => {
+  return (await api.post("attendance/checkout/")).data;
 };
 
 
@@ -130,9 +124,9 @@ export const checkOut = async (employee_id) => {
 // TODAY STATUS
 // ------------------------------
 export const getTodayStatus = async () => {
-  return (await api.get("attendance/today/")).data;
+  const res = await api.get("/attendance/today/");
+  return res.data;
 };
-
 // ------------------------------
 // HISTORY
 // ------------------------------

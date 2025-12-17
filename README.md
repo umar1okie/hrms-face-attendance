@@ -149,7 +149,8 @@ python manage.py runserver
 
 5.Start Celery Worker
 
-celery -A config worker -l info
+celery -A config worker -l info -P solo
+
 
 
 6. Start Celery Beat (Scheduler)

@@ -32,7 +32,7 @@ export default function DailyCheckIn() {
   // -------------------------------
   useEffect(() => {
     const savedImage = localStorage.getItem("capturedImage");
-    // const savedStartTime = localStorage.getItem("checkInStartTime");
+    const savedStartTime = localStorage.getItem("checkInStartTime");
     const savedStatus = localStorage.getItem("statusMsg");
 
     if (savedImage) setCapturedImage(savedImage);

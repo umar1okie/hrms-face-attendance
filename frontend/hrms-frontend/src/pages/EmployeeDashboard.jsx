@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import { Link } from "react-router-dom";
-import { getAttendanceHistory } from "../services/api";
+import { getAttendanceHistory, getTodayStatus } from "../services/api";
 
 export default function EmployeeDashboard() {
   const username = localStorage.getItem("username") || "";
@@ -17,6 +17,22 @@ export default function EmployeeDashboard() {
   const [filterDate, setFilterDate] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
+  useEffect(() => {
+    async function loadToday() {
+      try {
+        const res = await getTodayStatus();
+
+        if (res.checked_in) {
+          setTodayCheckIn(res.check_in_time);
+          setTodayCheckOut(res.check_out_time);
+          setTodayStatus(res.checked_out ? "Checked Out" : "Checked In");
+        }
+      } catch {}
+    }
+
+    loadToday();
+  }, []);
+
   // Load history
   useEffect(() => {
     async function loadHistory() {
@@ -26,12 +42,14 @@ export default function EmployeeDashboard() {
 
         // Today's record detection
         const today = new Date().toISOString().slice(0, 10);
-        const todayRecord = res.find(r => r.check_in_time.startsWith(today));
+        const todayRecord = res.find((r) => r.check_in_time.startsWith(today));
 
         if (todayRecord) {
           setTodayCheckIn(todayRecord.check_in_time);
           setTodayCheckOut(todayRecord.check_out_time);
-          setTodayStatus(todayRecord.check_out_time ? "Checked Out" : "Checked In");
+          setTodayStatus(
+            todayRecord.check_out_time ? "Checked Out" : "Checked In"
+          );
         }
       } catch (err) {
         console.log("History load failed:", err);
@@ -62,16 +80,20 @@ export default function EmployeeDashboard() {
 
   // Monthly Stats
   const daysPresent = history.length;
-  const totalWorkHours = history.reduce((sum, item) => {
-    if (!item.check_out_time) return sum;
-    const s = new Date(item.check_in_time);
-    const e = new Date(item.check_out_time);
-    return sum + (e - s) / 3600000;
-  }, 0).toFixed(2);
+  const totalWorkHours = history
+    .reduce((sum, item) => {
+      if (!item.check_out_time) return sum;
+      const s = new Date(item.check_in_time);
+      const e = new Date(item.check_out_time);
+      return sum + (e - s) / 3600000;
+    }, 0)
+    .toFixed(2);
 
   // History filtering
   const filteredHistory = history.filter((h) => {
-    const dateMatch = filterDate ? h.check_in_time.startsWith(filterDate) : true;
+    const dateMatch = filterDate
+      ? h.check_in_time.startsWith(filterDate)
+      : true;
     const statusMatch =
       filterStatus === "checked_in"
         ? !h.check_out_time
@@ -108,19 +130,29 @@ export default function EmployeeDashboard() {
 
             <p className="mt-3 text-sm">
               Status:{" "}
-              <strong className={todayStatus === "Checked In" ? "text-green-600" : "text-red-600"}>
+              <strong
+                className={
+                  todayStatus === "Checked In"
+                    ? "text-green-600"
+                    : "text-red-600"
+                }
+              >
                 {todayStatus}
               </strong>
             </p>
 
             <p className="text-sm mt-2">
               Check-in:{" "}
-              {todayCheckIn ? new Date(todayCheckIn).toLocaleTimeString() : "--"}
+              {todayCheckIn
+                ? new Date(todayCheckIn).toLocaleTimeString()
+                : "--"}
             </p>
 
             <p className="text-sm">
               Check-out:{" "}
-              {todayCheckOut ? new Date(todayCheckOut).toLocaleTimeString() : "--"}
+              {todayCheckOut
+                ? new Date(todayCheckOut).toLocaleTimeString()
+                : "--"}
             </p>
 
             <p className="text-sm mt-2">
@@ -161,7 +193,8 @@ export default function EmployeeDashboard() {
           <div>
             <h3 className="font-medium text-gray-700">Average Work/Day</h3>
             <p className="text-3xl mt-2">
-              {daysPresent > 0 ? (totalWorkHours / daysPresent).toFixed(2) : 0} hrs
+              {daysPresent > 0 ? (totalWorkHours / daysPresent).toFixed(2) : 0}{" "}
+              hrs
             </p>
           </div>
         </div>
@@ -199,7 +232,11 @@ export default function EmployeeDashboard() {
                 <div key={i} className="border-b py-2 text-sm">
                   <strong>{new Date(h.check_in_time).toLocaleString()}</strong>
                   {h.check_out_time ? (
-                    <> — Checked out at {new Date(h.check_out_time).toLocaleTimeString()}</>
+                    <>
+                      {" "}
+                      — Checked out at{" "}
+                      {new Date(h.check_out_time).toLocaleTimeString()}
+                    </>
                   ) : (
                     <> — Not checked out</>
                   )}
