@@ -34,9 +34,11 @@ export default function DailyCheckIn() {
     const savedImage = localStorage.getItem("capturedImage");
     const savedStartTime = localStorage.getItem("checkInStartTime");
     const savedStatus = localStorage.getItem("statusMsg");
+    const savedConfidence = localStorage.getItem("confidence");
 
     if (savedImage) setCapturedImage(savedImage);
     if (savedStatus) setStatusMsg(savedStatus);
+    if (savedConfidence) setConfidence(parseFloat(savedConfidence));
 
     return () => stopCamera();
   }, []);
@@ -52,7 +54,7 @@ export default function DailyCheckIn() {
         videoRef.current.srcObject = stream;
 
         // IMPORTANT FIX: ensures instant camera start
-        await videoRef.current.play().catch(() => {});
+        await videoRef.current.play().catch(() => { });
 
         setCameraOn(true);
       }
@@ -120,7 +122,9 @@ export default function DailyCheckIn() {
       setStatusMsg("Checked In Successfully!");
       localStorage.setItem("statusMsg", "Checked In Successfully!");
 
-      setConfidence(resp.confidence_score || 0);
+      const score = resp.confidence_score || 0;
+      setConfidence(score);
+      localStorage.setItem("confidence", score.toString());
     } catch (err) {
       console.error("CHECK-IN ERROR:", err);
       pushToast("Face not recognized or server error");
@@ -146,8 +150,10 @@ export default function DailyCheckIn() {
       localStorage.removeItem("capturedImage");
       localStorage.removeItem("checkInStartTime");
       localStorage.removeItem("statusMsg");
+      localStorage.removeItem("confidence");
 
       setCapturedImage(null);
+      setConfidence(null);
     } catch (err) {
       console.error("CHECK-OUT ERROR:", err);
       pushToast("Checkout failed");
@@ -214,9 +220,8 @@ export default function DailyCheckIn() {
             <button
               onClick={capturePhoto}
               disabled={!cameraOn}
-              className={`mt-3 w-full py-2 rounded text-white ${
-                cameraOn ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400"
-              }`}
+              className={`mt-3 w-full py-2 rounded text-white ${cameraOn ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400"
+                }`}
             >
               Capture Photo
             </button>
@@ -247,9 +252,8 @@ export default function DailyCheckIn() {
           <button
             onClick={handleCheckIn}
             disabled={loading}
-            className={`px-6 py-2 rounded text-white ${
-              loading ? "bg-gray-400" : "bg-green-600"
-            }`}
+            className={`px-6 py-2 rounded text-white ${loading ? "bg-gray-400" : "bg-green-600"
+              }`}
           >
             {loading ? "Processing…" : "Check In"}
           </button>
@@ -257,9 +261,8 @@ export default function DailyCheckIn() {
           <button
             onClick={handleCheckOut}
             disabled={loading}
-            className={`px-6 py-2 rounded text-white ${
-              loading ? "bg-gray-400" : "bg-red-600"
-            }`}
+            className={`px-6 py-2 rounded text-white ${loading ? "bg-gray-400" : "bg-red-600"
+              }`}
           >
             Check Out
           </button>
